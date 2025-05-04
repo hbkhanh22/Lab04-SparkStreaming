@@ -57,11 +57,16 @@ class KafkaProducer:
             if price_data:
                 msg = json.dumps(price_data)
                 self.producer.produce(self.topic, key=price_data['symbol'], value=msg.encode('utf-8'))
-                self.producer.flush()  # Ensure all messages are sent
+                # self.producer.flush()  # Ensure all messages are sent
 
         except Exception as e:
             print(f"Error producing message to Kafka: {e}")
 
+    def flush(self) -> None:
+        """
+        Expose the underlying producer's flush method.
+        """
+        self.producer.flush()
 
 class PriceCrawler:
     """
@@ -71,20 +76,25 @@ class PriceCrawler:
         self.fetcher = BinanceFetcher()
         self.producer = KafkaProducer()
         self.interval = interval_ms / 1000  # Convert milliseconds to seconds
-
+        self.start_time = datetime.now(timezone.utc)
     def run(self) -> None:
         print("Starting price crawler...")
         try:
             while True:
+                self.current_time = datetime.now(timezone.utc)
+                start = time.time()
                 price_data = self.fetcher.fetch_price()
+                end = time.time()
+                print(f"Time taken to fetch price: {end - start} seconds")
                 if price_data:
                     self.producer.produce(price_data)
-                time.sleep(self.interval)
+                    print(f"Produced message: {price_data} at {datetime.now(timezone.utc).isoformat()}")
+                if (self.current_time - self.start_time).total_seconds() >= self.interval:
+                    self.start_time = self.current_time
+                    self.producer.flush()
         except KeyboardInterrupt:
             print("Price crawler stopped by user.")
 
-
-
 if __name__ == "__main__":
-    crawler = PriceCrawler(interval_ms=100, )
+    crawler = PriceCrawler(interval_ms=100)
     crawler.run()
