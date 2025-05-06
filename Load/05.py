@@ -109,6 +109,7 @@ class Loader:
             # Write to MongoDB collection
             query = filtered_df.writeStream \
                 .format("mongodb") \
+                .option("uri", self.mongodb_uri) \
                 .option("database", self.mongodb_database) \
                 .option("collection", f"btc-price-zscore-{window_interval}") \
                 .option("checkpointLocation", os.path.join(self.checkpoint_dir, f"btc-zscore-{window_interval}")) \

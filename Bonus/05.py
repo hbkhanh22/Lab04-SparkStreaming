@@ -21,8 +21,12 @@ class Bonus:
         # Initialize Spark session with necessary configurations
         self.spark = SparkSession.builder\
                     .appName("btc-bonus")\
+                    .master("local[*]") \
                     .config("spark.sql.shuffle.partitions", "1")\
                     .config("spark.jars.packages", "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0")\
+                    .config("spark.driver.host", "127.0.0.1") \
+                    .config("spark.driver.bindAddress", "127.0.0.1") \
+                    .config("spark.hadoop.fs.defaultFS", "file:///") \
                     .getOrCreate()
         
         # Schema for the incoming JSON data from Kafka
@@ -166,7 +170,7 @@ if __name__ == "__main__":
         kafka_bootstrap_servers="localhost:9092",
         higher_topic="btc-price-higher",
         lower_topic="btc-price-lower",
-        checkpoint_higher_dir="/tmp/high-checkpoint",
-        checkpoint_lower_dir="/tmp/low-checkpoint"
+        checkpoint_higher_dir="file:///tmp/high-checkpoint",
+        checkpoint_lower_dir="file:///tmp/low-checkpoint"
     )
     btc_bonus.run()
